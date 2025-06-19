@@ -13,11 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the app code
+# Copy the script
 COPY processor.py .
 
-# Expose the port used by the app
-EXPOSE 8000
-
-# Run the Shiny app using the correct Python module
-CMD ["python", "-m", "shiny", "run", "processor.py", "--host", "0.0.0.0", "--port", "8000"]
+# Run the Python script
+CMD ["python", "processor.py"]
