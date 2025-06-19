@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the app code
-COPY fileUpload.py .
+COPY processor.py .
 
 # Expose the port used by the app
 EXPOSE 8000
