@@ -17,23 +17,31 @@ sqs = boto3.client("sqs", region_name=S3_REGION)
 def process_file(s3_key):
     try:
         print(f"Downloading file: {s3_key}")
-        # Get the Excel file from S3
+        
+        # Get the object from S3
         obj = s3.get_object(Bucket=S3_INPUT_BUCKET, Key=s3_key)
-        df = pd.read_excel(obj["Body"], engine="openpyxl")
+        
+        # Wrap in BytesIO to make it seekable
+        body = obj["Body"].read()
+        file_buffer = BytesIO(body)
+        
+        # Now read Excel from seekable buffer
+        df = pd.read_excel(file_buffer, engine="openpyxl")
 
-        # Process (take top 10 rows)
+        # Process (top 10 rows)
         processed_df = df.head(10)
 
         # Write to output buffer
-        buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+        output_buffer = BytesIO()
+        with pd.ExcelWriter(output_buffer, engine="xlsxwriter") as writer:
             processed_df.to_excel(writer, index=False, sheet_name="Sheet1")
-        buffer.seek(0)
+        output_buffer.seek(0)
 
         # Upload to output bucket
         output_key = f"processed/{s3_key.split('/')[-1]}"
-        s3.upload_fileobj(buffer, S3_OUTPUT_BUCKET, output_key)
-        print(f"Uploaded processed file to: s3://{S3_OUTPUT_BUCKET}/{output_key}")
+        s3.upload_fileobj(output_buffer, S3_OUTPUT_BUCKET, output_key)
+        print(f"✅ Uploaded processed file to: s3://{S3_OUTPUT_BUCKET}/{output_key}")
+    
     except Exception as e:
         print(f"❌ Failed to process {s3_key}: {e}")
 
